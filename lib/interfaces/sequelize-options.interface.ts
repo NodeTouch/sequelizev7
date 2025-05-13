@@ -1,11 +1,11 @@
 import { Type } from '@nestjs/common';
 import { ModuleMetadata } from '@nestjs/common/interfaces';
-import { SequelizeOptions } from 'sequelize-typescript';
+import { Options, AbstractDialect } from '@sequelize/core';
 
 /**
  * @publicApi
  */
-export type SequelizeModuleOptions = {
+export type SequelizeModuleOptions<Dialect extends AbstractDialect> = {
   /**
    * Connection name
    */
@@ -29,31 +29,27 @@ export type SequelizeModuleOptions = {
    * Default: true
    */
   synchronize?: boolean;
-  /**
-   * Sequelize connection string
-   */
-  uri?: string;
-} & Partial<SequelizeOptions>;
+} & Partial<Options<Dialect>>;
 
 /**
  * @publicApi
  */
-export interface SequelizeOptionsFactory {
+export interface SequelizeOptionsFactory<Dialect extends AbstractDialect> {
   createSequelizeOptions(
     connectionName?: string,
-  ): Promise<SequelizeModuleOptions> | SequelizeModuleOptions;
+  ):  Promise<SequelizeModuleOptions<Dialect>> | SequelizeModuleOptions<Dialect>;
 }
 
 /**
  * @publicApi
  */
-export interface SequelizeModuleAsyncOptions
+export interface SequelizeModuleAsyncOptions<Dialect extends AbstractDialect>
   extends Pick<ModuleMetadata, 'imports'> {
   name?: string;
-  useExisting?: Type<SequelizeOptionsFactory>;
-  useClass?: Type<SequelizeOptionsFactory>;
+  useExisting?: Type<SequelizeOptionsFactory<Dialect>>;
+  useClass?: Type<SequelizeOptionsFactory<Dialect>>;
   useFactory?: (
     ...args: any[]
-  ) => Promise<SequelizeModuleOptions> | SequelizeModuleOptions;
+  ) => Promise<SequelizeModuleOptions<Dialect>> | SequelizeModuleOptions<Dialect>;
   inject?: any[];
 }

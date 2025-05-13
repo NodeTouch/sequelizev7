@@ -1,18 +1,15 @@
 import { Provider } from '@nestjs/common';
-import { Sequelize, SequelizeOptions } from 'sequelize-typescript';
+import { Sequelize, Options, AbstractDialect } from '@sequelize/core';
 import { getConnectionToken, getModelToken } from './common/sequelize.utils';
 
-export function createSequelizeProviders(
+export function createSequelizeProviders<Dialect extends AbstractDialect>(
   entities?: Function[],
-  connection?: SequelizeOptions | string,
+  connection?: Options<Dialect> | string,
 ): Provider[] {
   const repositories = (entities || []).map((entity) => ({
     provide: getModelToken(entity, connection),
     useFactory: (connection: Sequelize) => {
-      if (!connection.repositoryMode) {
-        return entity;
-      }
-      return connection.getRepository(entity as any);
+      return entity;
     },
     inject: [getConnectionToken(connection)],
   }));

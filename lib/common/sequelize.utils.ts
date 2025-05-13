@@ -2,7 +2,7 @@ import { Logger, Type } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Observable } from 'rxjs';
 import { delay, retryWhen, scan } from 'rxjs/operators';
-import { Sequelize } from 'sequelize-typescript';
+import { Sequelize, AbstractDialect } from '@sequelize/core';
 import { CircularDependencyException } from '../exceptions/circular-dependency.exception';
 import { SequelizeModuleOptions } from '../interfaces';
 import { DEFAULT_CONNECTION_NAME } from '../sequelize.constants';
@@ -17,9 +17,9 @@ const logger = new Logger('SequelizeModule');
  *
  * @publicApi
  */
-export function getModelToken(
+export function getModelToken<Dialect extends AbstractDialect>(
   entity: Function,
-  connection: SequelizeModuleOptions | string = DEFAULT_CONNECTION_NAME,
+  connection: SequelizeModuleOptions<Dialect> | string = DEFAULT_CONNECTION_NAME,
 ) {
   if (entity === null || entity === undefined) {
     throw new CircularDependencyException('@InjectModel()');
@@ -36,8 +36,8 @@ export function getModelToken(
  *
  * @publicApi
  */
-export function getConnectionToken(
-  connection: SequelizeModuleOptions | string = DEFAULT_CONNECTION_NAME,
+export function getConnectionToken<Dialect extends AbstractDialect>(
+  connection: SequelizeModuleOptions<Dialect> | string = DEFAULT_CONNECTION_NAME,
 ): string | Function | Type<Sequelize> {
   return DEFAULT_CONNECTION_NAME === connection
     ? Sequelize
@@ -56,8 +56,8 @@ export function getConnectionToken(
  *
  * @publicApi
  */
-export function getConnectionPrefix(
-  connection: SequelizeModuleOptions | string = DEFAULT_CONNECTION_NAME,
+export function getConnectionPrefix<Dialect extends AbstractDialect>(
+  connection: SequelizeModuleOptions<Dialect> | string = DEFAULT_CONNECTION_NAME,
 ): string {
   if (connection === DEFAULT_CONNECTION_NAME) {
     return '';
@@ -100,7 +100,7 @@ export function handleRetry(
 /**
  * @publicApi
  */
-export function getConnectionName(options: SequelizeModuleOptions) {
+export function getConnectionName<Dialect extends AbstractDialect>(options: SequelizeModuleOptions<Dialect>) {
   return options && options.name ? options.name : DEFAULT_CONNECTION_NAME;
 }
 

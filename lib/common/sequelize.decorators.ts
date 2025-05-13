@@ -1,4 +1,5 @@
 import { Inject } from '@nestjs/common';
+import { AbstractDialect } from '@sequelize/core';
 import { SequelizeModuleOptions } from '../interfaces/sequelize-options.interface';
 import { DEFAULT_CONNECTION_NAME } from '../sequelize.constants';
 import { getConnectionToken, getModelToken } from './sequelize.utils';
@@ -14,7 +15,7 @@ export const InjectModel = (
 /**
  * @publicApi
  */
-export const InjectConnection: (
-  connection?: SequelizeModuleOptions | string,
-) => ParameterDecorator = (connection?: SequelizeModuleOptions | string) =>
+export const InjectConnection: <Dialect extends AbstractDialect>(
+  connection?: SequelizeModuleOptions<Dialect> | string,
+) => ParameterDecorator = <Dialect extends AbstractDialect>(connection?: SequelizeModuleOptions<Dialect> | string) =>
   Inject(getConnectionToken(connection));

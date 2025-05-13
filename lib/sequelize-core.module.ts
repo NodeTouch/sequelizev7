@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { defer, lastValueFrom } from 'rxjs';
-import { Sequelize, SequelizeOptions } from 'sequelize-typescript';
+import { Sequelize, Options, AbstractDialect } from '@sequelize/core';
 import {
   generateString,
   getConnectionToken,
@@ -29,20 +29,20 @@ import {
 
 @Global()
 @Module({})
-export class SequelizeCoreModule implements OnApplicationShutdown {
+export class SequelizeCoreModule<Dialect extends AbstractDialect> implements OnApplicationShutdown {
   constructor(
     @Inject(SEQUELIZE_MODULE_OPTIONS)
-    private readonly options: SequelizeModuleOptions,
+    private readonly options: SequelizeModuleOptions<Dialect>,
     private readonly moduleRef: ModuleRef,
   ) {}
 
-  static forRoot(options: SequelizeModuleOptions = {}): DynamicModule {
+  static forRoot<Dialect extends AbstractDialect>(options: SequelizeModuleOptions<Dialect> = {}): DynamicModule {
     const sequelizeModuleOptions = {
       provide: SEQUELIZE_MODULE_OPTIONS,
       useValue: options,
     };
     const connectionProvider = {
-      provide: getConnectionToken(options as SequelizeOptions) as string,
+      provide: getConnectionToken(options as Options<Dialect>) as string,
       useFactory: async () => await this.createConnectionFactory(options),
     };
 
@@ -53,10 +53,10 @@ export class SequelizeCoreModule implements OnApplicationShutdown {
     };
   }
 
-  static forRootAsync(options: SequelizeModuleAsyncOptions): DynamicModule {
+  static forRootAsync<Dialect extends AbstractDialect>(options: SequelizeModuleAsyncOptions<Dialect>): DynamicModule {
     const connectionProvider = {
-      provide: getConnectionToken(options as SequelizeOptions) as string,
-      useFactory: async (sequelizeOptions: SequelizeModuleOptions) => {
+      provide: getConnectionToken(options as Options<Dialect>) as string,
+      useFactory: async (sequelizeOptions: SequelizeModuleOptions<Dialect>) => {
         if (options.name) {
           return await this.createConnectionFactory({
             ...sequelizeOptions,
@@ -86,20 +86,20 @@ export class SequelizeCoreModule implements OnApplicationShutdown {
 
   async onApplicationShutdown() {
     const connection = this.moduleRef.get<Sequelize>(
-      getConnectionToken(this.options as SequelizeOptions) as Type<Sequelize>,
+      getConnectionToken(this.options as Options<Dialect>) as Type<Sequelize>,
     );
     if (connection) {
       await connection.close();
     }
   }
 
-  private static createAsyncProviders(
-    options: SequelizeModuleAsyncOptions,
+  private static createAsyncProviders<Dialect extends AbstractDialect>(
+    options: SequelizeModuleAsyncOptions<Dialect>,
   ): Provider[] {
     if (options.useExisting || options.useFactory) {
       return [this.createAsyncOptionsProvider(options)];
     }
-    const useClass = options.useClass as Type<SequelizeOptionsFactory>;
+    const useClass = options.useClass as Type<SequelizeOptionsFactory<Dialect>>;
     return [
       this.createAsyncOptionsProvider(options),
       {
@@ -109,8 +109,8 @@ export class SequelizeCoreModule implements OnApplicationShutdown {
     ];
   }
 
-  private static createAsyncOptionsProvider(
-    options: SequelizeModuleAsyncOptions,
+  private static createAsyncOptionsProvider<Dialect extends AbstractDialect>(
+    options: SequelizeModuleAsyncOptions<Dialect>,
   ): Provider {
     if (options.useFactory) {
       return {
@@ -122,25 +122,26 @@ export class SequelizeCoreModule implements OnApplicationShutdown {
     // `as Type<SequelizeOptionsFactory>` is a workaround for microsoft/TypeScript#31603
     const inject = [
       (options.useClass ||
-        options.useExisting) as Type<SequelizeOptionsFactory>,
+        options.useExisting) as Type<SequelizeOptionsFactory<Dialect>>,
     ];
     return {
       provide: SEQUELIZE_MODULE_OPTIONS,
-      useFactory: async (optionsFactory: SequelizeOptionsFactory) =>
+      useFactory: async (optionsFactory: SequelizeOptionsFactory<Dialect>) =>
         await optionsFactory.createSequelizeOptions(options.name),
       inject,
     };
   }
 
-  private static async createConnectionFactory(
-    options: SequelizeModuleOptions,
+  private static async createConnectionFactory<Dialect extends AbstractDialect>(
+    options: SequelizeModuleOptions<Dialect>,
   ): Promise<Sequelize> {
     return lastValueFrom(
       defer(async () => {
-        const sequelize = options?.uri
-          ? new Sequelize(options.uri, options)
-          : new Sequelize(options);
-
+        const keys = ['name', 'retryDelay','retryAttempts', 'autoLoadModels', 'synchronize'];
+        const configure = Object.assign({}, options);
+        keys.forEach(key => delete (configure as any)[key]);
+        const sequelize = new Sequelize(configure as Options<Dialect>);
+        
         if (!options.autoLoadModels) {
           return sequelize;
         }

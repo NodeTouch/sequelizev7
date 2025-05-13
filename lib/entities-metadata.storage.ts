@@ -1,12 +1,13 @@
+import { AbstractDialect } from '@sequelize/core';
 import { SequelizeModuleOptions } from './interfaces';
 
-type ConnectionToken = SequelizeModuleOptions | string;
+type ConnectionToken<Dialect extends AbstractDialect> = SequelizeModuleOptions<Dialect> | string;
 
 export class EntitiesMetadataStorage {
   private static readonly storage = new Map<string, Function[]>();
 
-  static addEntitiesByConnection(
-    connection: ConnectionToken,
+  static addEntitiesByConnection<Dialect extends AbstractDialect>(
+    connection: ConnectionToken<Dialect>,
     entities: Function[],
   ) {
     const connectionToken =
@@ -28,7 +29,7 @@ export class EntitiesMetadataStorage {
     });
   }
 
-  static getEntitiesByConnection(connection: ConnectionToken): Function[] {
+  static getEntitiesByConnection<Dialect extends AbstractDialect>(connection: ConnectionToken<Dialect>): Function[] {
     const connectionToken =
       typeof connection === 'string' ? connection : connection.name;
 
