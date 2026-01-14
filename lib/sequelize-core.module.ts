@@ -85,14 +85,6 @@ export class SequelizeCoreModule<Dialect extends AbstractDialect> implements OnA
   }
 
   async onApplicationShutdown() {
-    if (
-      typeof this.options.autoCloseConnection !== 'undefined' &&
-      !this.options.autoCloseConnection
-    ) {
-      /* Skip closing Sequelize connection automatically by shutdown hook */
-      return;
-    }
-
     const connection = this.moduleRef.get<Sequelize>(
       getConnectionToken(this.options as Options<Dialect>) as Type<Sequelize>,
     );
