@@ -1,5 +1,5 @@
 {
-  "name": "@nestjs/sequelizev7",
+  "name": "@nestjs/sequelize",
   "version": "11.0.1",
   "description": "Nest - modern, fast, powerful node.js web framework (@sequelize)",
   "author": "Kamil Mysliwiec",
